@@ -1,4 +1,20 @@
+const supportEmail = "tanujaiswal676@gmail.com";
+
 function Contact() {
+  function prepareEmail(event) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const subject = `[FixMate] ${formData.get("subject")}`;
+    const message = [
+      `Name: ${formData.get("name")}`,
+      `Email: ${formData.get("email")}`,
+      `Phone: ${formData.get("phone")}`,
+      "",
+      formData.get("message"),
+    ].join("\n");
+    window.location.href = `mailto:${supportEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+  }
+
   return (
     <section id="contact" className="contact">
       <div className="section-title">
@@ -24,7 +40,7 @@ function Contact() {
 
           <div className="contact-item">
             <strong>📧 Email</strong>
-            <span>tanujaiswal676@gmail.com</span>
+            <span>{supportEmail}</span>
           </div>
 
           <div className="contact-item">
@@ -47,31 +63,29 @@ function Contact() {
         <div className="contact-form">
           <h3>Send us a Message</h3>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              alert("Thank you! Your message has been submitted.");
-            }}
-          >
+          <form onSubmit={prepareEmail}>
             <input
               type="text"
+              name="name"
               placeholder="Your Full Name"
               required
             />
 
             <input
               type="email"
+              name="email"
               placeholder="Your Email Address"
               required
             />
 
             <input
               type="tel"
+              name="phone"
               placeholder="Your Phone Number"
               required
             />
 
-            <select required defaultValue="">
+            <select name="subject" required defaultValue="">
               <option value="" disabled>
                 Select Subject
               </option>
@@ -83,12 +97,14 @@ function Contact() {
             </select>
 
             <textarea
+              name="message"
               placeholder="Write your message..."
               required
             ></textarea>
 
+            <p className="contact-helper">Your email app will open with this message ready to send.</p>
             <button type="submit">
-              Send Message
+              Open Email App
             </button>
           </form>
         </div>

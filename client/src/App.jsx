@@ -1,194 +1,301 @@
+import { useEffect, useState } from "react";
+import {
+  BrowserRouter,
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import "./App.css";
-
-import Services from "./Services";
-import HowItWorks from "./HowItWorks";
+import { apiRequest } from "./api";
+import { useAuth } from "./useAuth";
 import About from "./About";
+import Booking from "./Booking";
 import Contact from "./Contact";
+import HowItWorks from "./HowItWorks";
 import Login from "./Login";
 import Providers from "./Providers";
+import Register from "./Register";
+import Services from "./Services";
 
-function App() {
+function getIntendedPath(location, user) {
+  const intendedPath = location.state?.from?.pathname;
+  if (typeof intendedPath === "string" && intendedPath.startsWith("/") && !intendedPath.startsWith("//")) {
+    return `${intendedPath}${location.state.from.search || ""}${location.state.from.hash || ""}`;
+  }
+  return user?.role === "provider" ? "/providers" : "/";
+}
+
+function RequireAuth({ children }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return <p className="loading-message" role="status">Checking your sign-in…</p>;
+  }
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  return children;
+}
+
+function GuestRoute({ children }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return <p className="loading-message" role="status">Checking your sign-in…</p>;
+  }
+  if (user) {
+    return <Navigate to={getIntendedPath(location, user)} replace />;
+  }
+  return children;
+}
+
+function HomePage({ filters, search, setSearch, handleSearch, handleBook, selectedService, onClearSelection, onMessage }) {
   return (
-    <div>
-
-      {/* ================= NAVBAR ================= */}
-      <nav className="navbar">
-
-        <div className="logo">
-          FixMate
-        </div>
-
-        <ul className="nav-links">
-
-          <li>
-            <a href="#">Home</a>
-          </li>
-
-          <li>
-            <a href="#services">Services</a>
-          </li>
-          <li>
-            <a href="#providers">Professionals</a>
-          </li>
-
-          <li>
-            <a href="#how-it-works">How It Works</a>
-          </li>
-
-          <li>
-            <a href="#about">About</a>
-          </li>
-
-          <li>
-            <a href="#contact">Contact</a>
-          </li>
-
-          <li>
-            <a href="#login">Login</a>
-          </li>
-
-          <li>
-            <a href="#provider" className="provider-btn">
-              Become a Provider
-            </a>
-          </li>
-
-        </ul>
-
-      </nav>
-
-
-      {/* ================= HERO ================= */}
+    <>
       <section className="hero">
-
-        <div className="hero-badge">
-          ⭐ Trusted Local Service Platform
-        </div>
-
-        <h1>
-          Find Trusted <span>Professionals</span> Near You
-        </h1>
-
+        <div className="hero-badge">Trusted local service platform</div>
+        <h1>Find Trusted <span>Professionals</span> Near You</h1>
         <p>
           From plumbing and electrical repairs to cleaning and computer
           services, find reliable professionals for your everyday needs.
         </p>
-
-
-        <div className="search-box">
-
+        <form className="search-box" onSubmit={handleSearch}>
           <input
-            type="text"
-            placeholder="🔍  What service do you need?"
+            type="search"
+            aria-label="Service category"
+            placeholder="What service do you need?"
+            value={search.category}
+            onChange={(event) => setSearch({ ...search, category: event.target.value })}
           />
-
           <input
-            type="text"
-            placeholder="📍  Enter your location"
+            type="search"
+            aria-label="Location"
+            placeholder="Enter your city"
+            value={search.location}
+            onChange={(event) => setSearch({ ...search, location: event.target.value })}
           />
-
-          <button>
-            Find Services
-          </button>
-
-        </div>
-
-
+          <button type="submit">Find Services</button>
+        </form>
         <div className="hero-stats">
-
-          <div>
-            <h3>500+</h3>
-            <p>Professionals</p>
-          </div>
-
-          <div>
-            <h3>1,000+</h3>
-            <p>Services Completed</p>
-          </div>
-
-          <div>
-            <h3>4.8 ⭐</h3>
-            <p>Average Rating</p>
-          </div>
-
+          <div><h3>Local</h3><p>Independent professionals</p></div>
+          <div><h3>Flexible</h3><p>Book on your schedule</p></div>
+          <div><h3>Secure</h3><p>Account-based requests</p></div>
         </div>
-
       </section>
-
-
-      {/* ================= SERVICES ================= */}
-      <section id="services">
-        <Services />
+      <section id="services"><Services filters={filters} onBook={handleBook} /></section>
+      <section id="providers"><Providers filters={filters} /></section>
+      <section id="how-it-works"><HowItWorks /></section>
+      <section id="about"><About /></section>
+      <section id="booking">
+        <Booking
+          selectedService={selectedService}
+          onClearSelection={onClearSelection}
+          onMessage={onMessage}
+        />
       </section>
+      <section id="contact"><Contact /></section>
+    </>
+  );
+}
 
-      <section id="provider">
-        <Providers />
-      </section>
+function AppContent() {
+  const { user, setUser, authError, setAuthError } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [filters, setFilters] = useState({ category: "", location: "" });
+  const [search, setSearch] = useState({ category: "", location: "" });
+  const [selectedService, setSelectedService] = useState(null);
+  const [notice, setNotice] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
-      {/* ================= HOW IT WORKS ================= */}
-      <section id="how-it-works">
-        <HowItWorks />
-      </section>
+  const handleSearch = (event) => {
+    event.preventDefault();
+    setFilters(search);
+    navigate("/services");
+  };
 
+  const handleBook = (service) => {
+    if (!user) {
+      setSelectedService(service);
+      setNotice("Sign in or create an account to request this service.");
+      navigate("/login", { state: { from: { pathname: "/bookings" } } });
+      return;
+    }
+    if (user.role !== "user") {
+      setNotice("Customer accounts can request bookings. Sign in with a customer account to book.");
+      return;
+    }
+    setNotice("");
+    setSelectedService(service);
+    navigate("/bookings");
+  };
 
-      {/* ================= ABOUT ================= */}
-      <section id="about">
-        <About />
-      </section>
+  const handleAuth = (currentUser) => {
+    setUser(currentUser);
+    setAuthError("");
+    setNotice(`Welcome${currentUser.name ? `, ${currentUser.name}` : ""}.`);
+    if (selectedService && currentUser.role === "user") {
+      navigate("/bookings", { replace: true });
+    }
+  };
 
+  const handleLogout = async () => {
+    try {
+      await apiRequest("/auth/logout", { method: "POST" });
+      setUser(null);
+      setSelectedService(null);
+      setNotice("You have been signed out.");
+      navigate("/", { replace: true });
+    } catch (error) {
+      setNotice(error.message);
+    }
+  };
 
-      {/* ================= CONTACT ================= */}
-      <section id="contact">
-        <Contact />
-      </section>
+  const closeMenu = () => setMenuOpen(false);
 
+  return (
+    <div>
+      <nav className="navbar">
+        <Link className="logo" to="/" onClick={closeMenu}>FixMate</Link>
+        <button
+          className="menu-toggle"
+          type="button"
+          aria-expanded={menuOpen}
+          aria-label={menuOpen ? "Close navigation" : "Open navigation"}
+          aria-controls="primary-navigation"
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          {menuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+        <ul id="primary-navigation" className={`nav-links${menuOpen ? " is-open" : ""}`}>
+          <li><Link to="/" onClick={closeMenu}>Home</Link></li>
+          <li><Link to="/services" onClick={closeMenu}>Services</Link></li>
+          <li><Link to="/providers" onClick={closeMenu}>Professionals</Link></li>
+          <li><Link to="/how-it-works" onClick={closeMenu}>How It Works</Link></li>
+          {user ? (
+            <>
+              <li><span className="nav-welcome">Welcome, {user.name}</span></li>
+              <li><Link to="/bookings" onClick={closeMenu}>Bookings</Link></li>
+              {user.role === "provider" && (
+                <li><Link to="/providers" onClick={closeMenu}>Provider workspace</Link></li>
+              )}
+              <li><button className="nav-action" type="button" onClick={handleLogout}>Sign out</button></li>
+            </>
+          ) : (
+            <>
+              <li><Link to="/login" onClick={closeMenu}>Login</Link></li>
+              <li><Link to="/register" onClick={closeMenu}>Create account</Link></li>
+            </>
+          )}
+        </ul>
+      </nav>
 
-      {/* ================= LOGIN ================= */}
-      <section id="login">
-        <Login />
-      </section>
+      <main>
+        {(authError || notice) && (
+          <div className={`app-notice${authError ? " is-error" : ""}`} role="status">
+            {authError || notice}
+            <button type="button" aria-label="Dismiss message" onClick={() => {
+              setNotice("");
+              setAuthError("");
+            }}>×</button>
+          </div>
+        )}
 
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <HomePage
+                filters={filters}
+                search={search}
+                setSearch={setSearch}
+                handleSearch={handleSearch}
+                handleBook={handleBook}
+                selectedService={selectedService}
+                onClearSelection={() => setSelectedService(null)}
+                onMessage={setNotice}
+              />
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <GuestRoute>
+                <Login onAuthenticated={handleAuth} />
+              </GuestRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <GuestRoute>
+                <Register onAuthenticated={handleAuth} />
+              </GuestRoute>
+            }
+          />
+          <Route path="/services" element={<Services filters={filters} onBook={handleBook} />} />
+          <Route path="/providers" element={<Providers filters={filters} />} />
+          <Route
+            path="/bookings"
+            element={
+              <RequireAuth>
+                <Booking
+                  selectedService={selectedService}
+                  onClearSelection={() => setSelectedService(null)}
+                  onMessage={setNotice}
+                />
+              </RequireAuth>
+            }
+          />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
 
-      {/* ================= FOOTER ================= */}
       <footer className="footer">
-
         <div className="footer-content">
-
           <div>
             <h2>FixMate</h2>
-            <p>
-              Connecting you with trusted local professionals.
-            </p>
+            <p>Connecting you with trusted local professionals.</p>
           </div>
-
           <div>
             <h3>Quick Links</h3>
-
-            <a href="#">Home</a>
-            <a href="#services">Services</a>
-            <a href="#about">About</a>
-            <a href="#contact">Contact</a>
+            <Link to="/">Home</Link>
+            <Link to="/services">Services</Link>
+            <Link to="/about">About</Link>
+            <Link to="/contact">Contact</Link>
           </div>
-
           <div>
             <h3>For Professionals</h3>
-
-            <a href="#provider">Become a Provider</a>
-            <a href="#login">Provider Login</a>
+            <Link to="/register">Create a provider account</Link>
+            <Link to="/providers">Manage your services</Link>
           </div>
-
         </div>
-
         <div className="footer-bottom">
-          <p>
-            © 2026 FixMate. All rights reserved.
-          </p>
+          <p>© 2026 FixMate. All rights reserved.</p>
         </div>
-
       </footer>
-
     </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }
 
