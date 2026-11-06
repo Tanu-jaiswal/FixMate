@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const { after, before, test } = require("node:test");
 const app = require("../server");
 const { canCustomerCancel, canProviderSetStatus } = require("../utils/bookingTransitions");
+const getSessionCookieOptions = require("../utils/sessionCookieOptions");
 const { samples } = require("../scripts/seedServices");
 
 let server;
@@ -76,6 +77,22 @@ test("booking status transitions are restricted by actor and current state", () 
   assert.equal(canCustomerCancel("pending"), true);
   assert.equal(canCustomerCancel("accepted"), true);
   assert.equal(canCustomerCancel("completed"), false);
+});
+
+test("session cookies support cross-origin production requests without weakening local development", () => {
+  const productionOptions = getSessionCookieOptions("production");
+  assert.equal(productionOptions.httpOnly, true);
+  assert.equal(productionOptions.secure, true);
+  assert.equal(productionOptions.sameSite, "none");
+
+  const developmentOptions = getSessionCookieOptions("development");
+  assert.equal(developmentOptions.httpOnly, true);
+  assert.equal(developmentOptions.secure, false);
+  assert.equal(developmentOptions.sameSite, "lax");
+
+  const renderOptions = getSessionCookieOptions("development", true);
+  assert.equal(renderOptions.secure, true);
+  assert.equal(renderOptions.sameSite, "none");
 });
 
 test("sample service seed contains the requested listings with unique seed keys", () => {

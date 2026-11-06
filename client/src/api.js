@@ -23,7 +23,23 @@ export async function apiRequest(path, options = {}) {
     requestOptions.body = JSON.stringify(options.body);
   }
 
-  const response = await fetch(`${API_BASE_URL}/api${requestPath}`, requestOptions);
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api${requestPath}`, requestOptions);
+  } catch (error) {
+    if (!(error instanceof TypeError)) {
+      throw error;
+    }
+
+    console.error("[FixMate API] Network request failed.", {
+      method: requestOptions.method || "GET",
+      path: requestPath.split("?")[0],
+    });
+    throw new Error("Unable to reach the FixMate server. Check your connection and try again.", {
+      cause: error,
+    });
+  }
+
   const contentType = response.headers.get("content-type") || "";
   const result = contentType.includes("application/json")
     ? await response.json()

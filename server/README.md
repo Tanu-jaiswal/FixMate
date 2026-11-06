@@ -17,7 +17,7 @@ The API will not start if `MONGO_URI` or a sufficiently long `JWT_SECRET` is mis
 - Customer-only `POST /api/bookings`, `GET /api/bookings/mine`, `PATCH /api/bookings/:id/cancel`
 - Provider-only `GET /api/bookings/provider`, `PATCH /api/bookings/:id/status`
 
-Authentication is carried in an HttpOnly, SameSite cookie. Public registration supports customer (`user`) and provider roles; admin accounts must be provisioned outside public registration. Booking status updates follow the allowed pending → accepted/rejected → in progress → completed transitions, with customer cancellation allowed while pending or accepted.
+Authentication is carried in an HttpOnly cookie. Production cookies use `SameSite=None; Secure` so browsers can send sessions from the cross-origin Vercel frontend to the Render API; this is enabled for Render deployments or when `NODE_ENV=production`. Local development keeps `SameSite=Lax`. Public registration supports customer (`user`) and provider roles; admin accounts must be provisioned outside public registration. Booking status updates follow the allowed pending → accepted/rejected → in progress → completed transitions, with customer cancellation allowed while pending or accepted.
 
 ## Tests
 

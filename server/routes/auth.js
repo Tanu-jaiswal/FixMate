@@ -4,16 +4,11 @@ const User = require("../models/User");
 const Provider = require("../models/Provider");
 const { COOKIE_NAME, requireAuth } = require("../middleware/auth");
 const httpError = require("../utils/httpError");
+const getSessionCookieOptions = require("../utils/sessionCookieOptions");
 
 const router = express.Router();
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const cookieOptions = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-  path: "/",
-};
+const cookieOptions = getSessionCookieOptions();
 
 function issueSession(user, res) {
   const token = jwt.sign(
