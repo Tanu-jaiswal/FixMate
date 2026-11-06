@@ -16,9 +16,8 @@ The API will not start if `MONGO_URI` or a sufficiently long `JWT_SECRET` is mis
 - `GET /api/providers` (optional `category` and `location`); provider-only `GET /api/providers/me`, `PATCH /api/providers/me`
 - Customer-only `POST /api/bookings`, `GET /api/bookings/mine`, `PATCH /api/bookings/:id/cancel`
 - Provider-only `GET /api/bookings/provider`, `PATCH /api/bookings/:id/status`
-- Admin-only `GET /api/admin/overview`, `/users`, `/providers`, `/services`, `/bookings`; `PATCH /api/admin/services/:id/status`
 
-Authentication is carried in an HttpOnly cookie. Production cookies use `SameSite=None; Secure` so browsers can send sessions from the cross-origin Vercel frontend to the Render API; this is enabled for Render deployments or when `NODE_ENV=production`. Local development keeps `SameSite=Lax`. Public registration supports customer (`user`) and provider roles; admin accounts must be provisioned outside public registration. To promote an existing account, set `ADMIN_EMAIL` in the trusted server environment and run `npm run admin:promote`; the script changes that account's role and does not change its password. Do not run this command against production without intending to grant administrator privileges. Booking status updates follow the allowed pending → accepted/rejected → in progress → completed transitions, with customer cancellation allowed while pending or accepted.
+Authentication is carried in an HttpOnly cookie. Production cookies use `SameSite=None; Secure` so browsers can send sessions from the cross-origin Vercel frontend to the Render API; this is enabled for Render deployments or when `NODE_ENV=production`. Local development keeps `SameSite=Lax`. Public registration supports customer (`user`) and provider roles. Booking status updates follow the allowed pending → accepted/rejected → in progress → completed transitions, with customer cancellation allowed while pending or accepted.
 
 ## Tests
 

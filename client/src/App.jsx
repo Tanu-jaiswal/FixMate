@@ -14,7 +14,6 @@ import "./polish.css";
 import { apiRequest } from "./api";
 import { useAuth } from "./useAuth";
 import Account from "./Account";
-import AdminDashboard from "./AdminDashboard";
 import About from "./About";
 import Booking from "./Booking";
 import Contact from "./Contact";
@@ -27,12 +26,8 @@ import Services from "./Services";
 function getIntendedPath(location, user) {
   const intendedPath = location.state?.from?.pathname;
   if (typeof intendedPath === "string" && intendedPath.startsWith("/") && !intendedPath.startsWith("//")) {
-    if (user?.role === "admin" && !intendedPath.startsWith("/admin")) {
-      return "/admin";
-    }
     return `${intendedPath}${location.state.from.search || ""}${location.state.from.hash || ""}`;
   }
-  if (user?.role === "admin") return "/admin";
   return user?.role === "provider" ? "/providers" : "/";
 }
 
@@ -207,14 +202,13 @@ function AppContent() {
           {user ? (
             <>
               <li><span className="nav-welcome">Welcome, {user.name}</span></li>
-              <li><Link to="/bookings" onClick={closeMenu}>Bookings</Link></li>
+              {["user", "provider"].includes(user.role) && (
+                <li><Link to="/bookings" onClick={closeMenu}>Bookings</Link></li>
+              )}
               {user.role === "provider" && (
                 <li><Link to="/providers" onClick={closeMenu}>Provider workspace</Link></li>
               )}
-              {user.role === "admin" && (
-                <li><Link to="/admin" onClick={closeMenu}>Admin dashboard</Link></li>
-              )}
-              {user.role !== "admin" && (
+              {["user", "provider"].includes(user.role) && (
                 <li><Link to="/account" onClick={closeMenu}>My profile</Link></li>
               )}
               <li><button className="nav-action" type="button" onClick={handleLogout}>Sign out</button></li>
@@ -290,14 +284,6 @@ function AppContent() {
             element={
               <RequireRole roles={["user", "provider"]}>
                 <Account />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <RequireRole roles={["admin"]}>
-                <AdminDashboard />
               </RequireRole>
             }
           />

@@ -42,9 +42,6 @@ test("booking APIs reject anonymous requests", async () => {
     ["POST", "/api/bookings"],
     ["PATCH", "/api/bookings/example/cancel"],
     ["PATCH", "/api/bookings/example/status"],
-    ["GET", "/api/admin/overview"],
-    ["GET", "/api/admin/users"],
-    ["PATCH", "/api/admin/services/example/status"],
   ];
   for (const [method, path] of protectedRequests) {
     const response = await fetch(`${baseUrl}${path}`, { method });
@@ -59,27 +56,12 @@ test("registration validates input before attempting database writes", async () 
   const response = await fetch(`${baseUrl}/api/auth/register`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ name: "A", email: "not-an-email", password: "short", role: "admin" }),
+    body: JSON.stringify({ name: "A", email: "not-an-email", password: "short", role: "visitor" }),
   });
   const body = await response.json();
 
   assert.equal(response.status, 400);
   assert.match(body.message, /name/i);
-});
-
-test("public registration cannot create administrator accounts", async () => {
-  const response = await fetch(`${baseUrl}/api/auth/register`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      name: "FixMate Admin",
-      email: "admin@example.com",
-      password: "a-secure-test-password",
-      role: "admin",
-    }),
-  });
-
-  assert.equal(response.status, 400);
 });
 
 test("invalid login payload is rejected without a database lookup", async () => {
@@ -102,8 +84,8 @@ test("provider service mutations require provider authentication", async () => {
   assert.equal(response.status, 401);
 });
 
-test("role guards reject customers from provider and administrator actions", () => {
-  for (const role of ["provider", "admin"]) {
+test("role guards reject customers from provider actions", () => {
+  for (const role of ["provider"]) {
     let responseStatus;
     let responseBody;
     let passedToNext = false;
@@ -137,7 +119,7 @@ test("JWT authentication uses the current database role rather than the token ro
 
   try {
     const token = jwt.sign(
-      { sub: databaseUser._id, role: "admin" },
+      { sub: databaseUser._id, role: "provider" },
       testJwtSecret,
       { algorithm: "HS256", expiresIn: "1m" }
     );

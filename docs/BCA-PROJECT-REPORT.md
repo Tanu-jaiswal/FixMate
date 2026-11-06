@@ -15,13 +15,13 @@
 
 ## 1. Project overview
 
-FixMate is a web-based local service-booking platform that provides a common workflow for customers seeking household services and providers offering those services. Customers can discover available service listings and professionals, submit a dated booking request, and track its status. Providers can maintain a profile, manage listings, and process requests. Administrators have a protected dashboard for reviewing platform records and managing listing visibility.
+FixMate is a web-based local service-booking platform that provides a common workflow for customers seeking household services and providers offering those services. Customers can discover available service listings and professionals, submit a dated booking request, and track its status. Providers can maintain a profile, manage listings, and process requests.
 
 The application is implemented as a React single-page frontend and an Express REST API backed by MongoDB. The deployed client and API are hosted separately, with credentialed CORS and an HttpOnly JWT session cookie connecting them.
 
 ## 2. Abstract
 
-Finding a suitable local professional and coordinating an appointment can be difficult when service information and requests are handled across disconnected channels. FixMate addresses this problem through a role-based web application that brings service discovery, provider profiles, booking requests, and status tracking into one platform. Customers search services by category and location, then submit requests for a future date and time. Providers maintain their public profile and listings and may accept, reject, or advance requests. Customers can review their booking history and cancel a request while its status permits cancellation. Administrators review account, listing, and booking information and may hide or restore listings.
+Finding a suitable local professional and coordinating an appointment can be difficult when service information and requests are handled across disconnected channels. FixMate addresses this problem through a role-based web application that brings service discovery, provider profiles, booking requests, and status tracking into one platform. Customers search services by category and location, then submit requests for a future date and time. Providers maintain their public profile and listings and may accept, reject, or advance requests. Customers can review their booking history and cancel a request while its status permits cancellation.
 
 The user interface is built with React and Vite. Express exposes REST endpoints, Mongoose models application data, bcryptjs hashes passwords, and JWTs are held in HttpOnly cookies. Role checks and ownership filters protect provider and customer actions. The project is deployed as a Vercel frontend and a Render API connected to MongoDB Atlas.
 
@@ -37,8 +37,7 @@ Customers may struggle to locate nearby service providers, compare available ser
 4. Allow customers to create, view, and cancel eligible bookings.
 5. Allow providers to publish services and manage incoming booking statuses.
 6. Restrict sensitive operations using authentication, roles, and record ownership.
-7. Provide a limited administrator interface for reporting and service visibility.
-8. Deploy the application using a separate frontend, API, and managed database.
+7. Deploy the application using a separate frontend, API, and managed database.
 
 ## 5. Existing and proposed system
 
@@ -52,7 +51,7 @@ FixMate offers public directories and role-specific authenticated workspaces. Se
 
 ## 6. Functional requirements
 
-- Register as a customer or provider; do not allow public administrator registration.
+- Register as a customer or provider.
 - Sign in, restore the current session, edit permitted profile fields, and sign out.
 - List and filter active services and provider profiles by category/location.
 - Open a service listing and initiate a booking flow.
@@ -60,13 +59,11 @@ FixMate offers public directories and role-specific authenticated workspaces. Se
 - View customer booking history and cancel pending or accepted bookings.
 - View provider booking requests and transition them through permitted states.
 - Create, edit, and deactivate provider-owned service listings.
-- View platform statistics and account/provider/service/booking records as an administrator.
-- Hide or restore a listing as an administrator without deleting its record.
 
 ## 7. Non-functional requirements
 
-- **Security:** bcrypt password hashing; HttpOnly JWT cookies; server-side role and ownership checks; no public admin enrollment; secrets kept in deployment environment variables.
-- **Privacy:** public directory responses expose only selected provider display fields; admin booking responses omit service addresses and request descriptions.
+- **Security:** bcrypt password hashing; HttpOnly JWT cookies; server-side role and ownership checks; secrets kept in deployment environment variables.
+- **Privacy:** public directory responses expose only selected provider display fields; booking responses omit service addresses and request descriptions where they are not needed.
 - **Reliability:** server-side validation, consistent HTTP error responses, and booking state checks.
 - **Usability:** responsive layout, visible loading/error/empty states, and form constraints.
 - **Maintainability:** separate route, model, middleware, and client-page modules.
@@ -89,7 +86,7 @@ FixMate offers public directories and role-specific authenticated workspaces. Se
 
 ```mermaid
 flowchart LR
-  Browser[Customer / Provider / Admin browser]
+  Browser[Customer / Provider browser]
   Vercel[Vercel: React + Vite SPA]
   API[Render: Express REST API]
   DB[(MongoDB Atlas)]
@@ -118,7 +115,7 @@ erDiagram
     string email UK
     string password "bcrypt hash; excluded by default"
     string phone
-    string role "user, provider, admin"
+    string role
     string address
   }
   PROVIDER {
@@ -152,7 +149,7 @@ erDiagram
   }
 ```
 
-The email field is unique. A provider belongs to one user. Services and bookings retain references to their provider and service rather than deleting related records when a listing is hidden. Timestamps support history and administrative review.
+The email field is unique. A provider belongs to one user. Services and bookings retain references to their provider and service rather than deleting related records when a listing is hidden. Timestamps support booking history.
 
 ## 11. Data-flow diagram
 
@@ -160,7 +157,6 @@ The email field is unique. A provider belongs to one user. Services and bookings
 flowchart TD
   C[Customer] -->|search / register / login / booking request| UI[FixMate React client]
   P[Provider] -->|profile / listings / booking decisions| UI
-  A[Administrator] -->|dashboard / listing visibility| UI
   UI -->|HTTPS API request + session cookie| AUTH[Express authentication and role middleware]
   AUTH -->|authorized operation| ROUTES[REST route handlers]
   ROUTES -->|read / validate / update| DB[(MongoDB collections)]
@@ -201,10 +197,6 @@ Public provider listings expose profile details needed for service discovery. Th
 
 Only customers can create bookings or cancel eligible bookings. Only providers can view requests addressed to their profile or advance their statuses. MongoDB update filters include both ownership and the previously read status to guard against cross-account changes and concurrent transitions.
 
-### Administrator dashboard
-
-The admin API is mounted separately and applies `requireAuth` and `allowRoles("admin")` to every route. It returns counts, lists all customers/providers/services/bookings, and changes only the listing visibility flag. The public registration endpoint rejects the `admin` role. Initial promotion is performed using a server-side maintenance script for an existing account.
-
 ### Contact
 
 The contact form prepares a `mailto:` message in the visitor's email application. It does not send or persist messages through FixMate.
@@ -235,33 +227,25 @@ Base URL: `https://fixmate-backend-0cyg.onrender.com`. All application routes ar
 | PATCH | `/bookings/:id/cancel` | Customer | Cancel own pending/accepted booking |
 | GET | `/bookings/provider` | Provider | Read requests for own provider profile |
 | PATCH | `/bookings/:id/status` | Provider | Advance/reject an owned booking |
-| GET | `/admin/overview` | Admin | Read aggregate account/service/booking counts |
-| GET | `/admin/users` | Admin | Read customer/provider accounts |
-| GET | `/admin/providers` | Admin | Read provider profiles |
-| GET | `/admin/services` | Admin | Read service listings |
-| PATCH | `/admin/services/:id/status` | Admin | Set listing `isActive` to a boolean |
-| GET | `/admin/bookings` | Admin | Read all bookings without addresses/details |
-
 Expected errors include `400` for invalid input, `401` when authentication is missing/invalid, `403` for an authenticated account with the wrong role, `404` for a missing resource, `409` for duplicate/conflicting operations, and `500` for unexpected server errors.
 
 ## 14. Testing and test cases
 
-The backend suite uses Node's built-in test runner and starts an ephemeral HTTP server without connecting to a test database. It covers health response privacy, anonymous authentication/booking/provider/admin access, registration validation (including blocking public admin registration), invalid login payload validation, provider/admin role guards, verification that the current database role supersedes the JWT role claim, service ID validation, session cookie policy, booking transition rules, and seed fixture uniqueness.
+The backend suite uses Node's built-in test runner and starts an ephemeral HTTP server without connecting to a test database. It covers health response privacy, anonymous authentication/booking/provider access, registration validation, invalid login payload validation, provider role guards, verification that the current database role supersedes the JWT role claim, service ID validation, session cookie policy, booking transition rules, and seed fixture uniqueness.
 
 | Test case | Expected behavior |
 |---|---|
 | Health endpoint | Returns success and connection state without database credentials |
-| Anonymous booking/provider/admin access | Rejected with HTTP 401 |
+| Anonymous booking/provider access | Rejected with HTTP 401 |
 | Invalid registration/login input | Rejected before database writes/lookups |
-| Public admin registration | Rejected |
-| Customer against provider/admin role guard | Rejected with HTTP 403 |
-| Signed JWT with stale administrator claim | Uses the current role loaded from the user record |
+| Customer against provider role guard | Rejected with HTTP 403 |
+| Signed JWT with stale role claim | Uses the current role loaded from the user record |
 | Booking status transition | Only the configured state transitions are allowed |
 | Production cookie settings | HttpOnly, Secure, SameSite=None |
 | Development cookie settings | HttpOnly, not Secure, SameSite=Lax |
 | Frontend lint/build | ESLint passes and Vite emits a production bundle |
 
-Database-backed registration, login, booking creation/cancellation, provider status updates, and administrator operations require a dedicated test database and role-specific accounts. The repository's automated suite does not claim to execute those MongoDB-backed flows.
+Database-backed registration, login, booking creation/cancellation, and provider status updates require a dedicated test database and role-specific accounts. The repository's automated suite does not claim to execute those MongoDB-backed flows.
 
 ## 15. Installation and setup
 
@@ -291,21 +275,16 @@ The local frontend defaults to the API at `http://localhost:5000`. Set `VITE_API
 4. Do not configure production secrets in a source file or Vite environment variable.
 5. Deploy and verify `/api/health`, CORS for the Vercel origin, public directories, and role-protected operations.
 
-### First administrator
-
-Create a regular customer account, then run `ADMIN_EMAIL=<existing-account-email> npm run admin:promote` in the server environment with the intended MongoDB URI configured. On Windows PowerShell, set `$env:ADMIN_EMAIL` before the command and remove it afterward. The script updates that existing account's role only; it creates no public admin endpoint. Grant the role only to a trusted account and sign in again after promotion.
-
 ## 17. Future scope
 
 - Email verification and password recovery.
-- Provider identity/document verification and administrator account controls.
+- Provider identity/document verification.
 - Rating and review workflow after completed bookings.
 - Payment integration with transaction and refund handling.
 - Notifications for booking status changes.
-- Pagination/filtering and audit logs for administrative views.
 - Dedicated integration and browser end-to-end testing against an isolated database.
 - Accessibility review and localization.
 
 ## 18. Conclusion
 
-FixMate demonstrates a full-stack booking workflow with public service discovery, customer/provider accounts, role-protected booking operations, persisted MongoDB data, and a separately provisioned administrative dashboard. It separates presentation, API routes, authorization middleware, and data models, and includes automated tests for core API safeguards and booking state rules. Prior to a formal production demonstration, the database-backed role workflows should be exercised using dedicated test accounts, and project-specific student details and screenshots should be added to this report.
+FixMate demonstrates a full-stack booking workflow with public service discovery, customer/provider accounts, role-protected booking operations, and persisted MongoDB data. It separates presentation, API routes, authorization middleware, and data models, and includes automated tests for core API safeguards and booking state rules. Prior to a formal production demonstration, the database-backed role workflows should be exercised using dedicated test accounts, and project-specific student details and screenshots should be added to this report.
