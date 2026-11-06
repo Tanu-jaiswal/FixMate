@@ -1,6 +1,16 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+const API_BASE_URL = (
+  configuredApiUrl ||
+  (import.meta.env.DEV
+    ? "http://localhost:5000"
+    : "https://fixmate-backend-0cyg.onrender.com")
+)
+  .replace(/\/+$/, "")
+  .replace(/\/api$/i, "");
 
 export async function apiRequest(path, options = {}) {
+  const apiPath = path.replace(/^\/?api(?=\/|$|\?)/i, "");
+  const requestPath = apiPath.startsWith("/") ? apiPath : `/${apiPath}`;
   const headers = new Headers(options.headers || {});
   const requestOptions = {
     ...options,
@@ -13,7 +23,7 @@ export async function apiRequest(path, options = {}) {
     requestOptions.body = JSON.stringify(options.body);
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, requestOptions);
+  const response = await fetch(`${API_BASE_URL}/api${requestPath}`, requestOptions);
   const contentType = response.headers.get("content-type") || "";
   const result = contentType.includes("application/json")
     ? await response.json()

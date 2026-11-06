@@ -5,9 +5,9 @@
 1. Copy `.env.example` to `.env` and set your MongoDB Atlas URI and a private JWT secret of at least 32 characters. Do not commit `.env`.
 2. Install dependencies with `npm install`.
 3. Start the API with `node server.js` (or `node --watch server.js` while developing).
-4. In `client`, run `npm install` and `npm run dev`. Vite proxies `/api` requests to `http://localhost:5000`.
+4. In `client`, run `npm install` and `npm run dev`. The frontend sends API requests directly to `http://localhost:5000` by default (or to `VITE_API_URL` when set).
 
-The API will not start if `MONGO_URI` or a sufficiently long `JWT_SECRET` is missing. In production, set `CLIENT_URL` to the exact frontend origin and serve the frontend and API over HTTPS.
+The API will not start if `MONGO_URI` or a sufficiently long `JWT_SECRET` is missing. In production, set Render's `CLIENT_URL` to the exact Vercel frontend origin (for example, `https://your-project.vercel.app`, without a path). Multiple allowed origins can be comma-separated. A trailing slash is accepted. Serve the frontend and API over HTTPS.
 
 ## API overview
 
