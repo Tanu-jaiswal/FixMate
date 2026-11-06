@@ -59,6 +59,14 @@ test("provider service mutations require provider authentication", async () => {
   assert.equal(response.status, 401);
 });
 
+test("service detail endpoint is registered and validates service IDs", async () => {
+  const response = await fetch(`${baseUrl}/api/services/not-a-service-id`);
+  const body = await response.json();
+
+  assert.equal(response.status, 400);
+  assert.match(body.message, /invalid/i);
+});
+
 test("booking status transitions are restricted by actor and current state", () => {
   assert.equal(canProviderSetStatus("pending", "accepted"), true);
   assert.equal(canProviderSetStatus("accepted", "in_progress"), true);

@@ -12,7 +12,7 @@ The API will not start if `MONGO_URI` or a sufficiently long `JWT_SECRET` is mis
 ## API overview
 
 - `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`, `PATCH /api/auth/me`
-- `GET /api/services` (optional `category` and `location` query parameters); provider-only `POST /api/services`, `PATCH /api/services/:id`, `DELETE /api/services/:id`
+- `GET /api/services` (optional `category` and `location` query parameters), `GET /api/services/:id`; provider-only `POST /api/services`, `PATCH /api/services/:id`, `DELETE /api/services/:id`
 - `GET /api/providers` (optional `category` and `location`); provider-only `GET /api/providers/me`, `PATCH /api/providers/me`
 - Customer-only `POST /api/bookings`, `GET /api/bookings/mine`, `PATCH /api/bookings/:id/cancel`
 - Provider-only `GET /api/bookings/provider`, `PATCH /api/bookings/:id/status`

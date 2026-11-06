@@ -32,6 +32,20 @@ router.get("/", async (req, res) => {
   res.json({ services: services.filter((service) => service.provider) });
 });
 
+router.get("/:id", async (req, res) => {
+  const service = await Service.findOne({ _id: req.params.id, isActive: true })
+    .populate({
+      path: "provider",
+      match: { isActive: true },
+      populate: { path: "user", select: "name" },
+    })
+    .lean();
+  if (!service || !service.provider) {
+    throw httpError(404, "Service was not found.");
+  }
+  res.json({ service });
+});
+
 router.post("/", requireAuth, allowRoles("provider"), async (req, res) => {
   const { name, category, description, price, city } = req.body;
   if (typeof name !== "string" || !name.trim() || typeof category !== "string" ||

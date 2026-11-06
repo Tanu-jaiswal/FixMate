@@ -125,10 +125,14 @@ function AppContent() {
   };
 
   const handleBook = (service) => {
+    const serviceId = encodeURIComponent(service._id);
+    const bookingPath = `/bookings?serviceId=${serviceId}`;
     if (!user) {
       setSelectedService(service);
       setNotice("Sign in or create an account to request this service.");
-      navigate("/login", { state: { from: { pathname: "/bookings" } } });
+      navigate("/login", {
+        state: { from: { pathname: "/bookings", search: `?serviceId=${serviceId}` } },
+      });
       return;
     }
     if (user.role !== "user") {
@@ -137,14 +141,23 @@ function AppContent() {
     }
     setNotice("");
     setSelectedService(service);
-    navigate("/bookings");
+    navigate(bookingPath);
   };
 
   const handleAuth = (currentUser) => {
     setUser(currentUser);
     setAuthError("");
     setNotice(`Welcome${currentUser.name ? `, ${currentUser.name}` : ""}.`);
-    if (selectedService && currentUser.role === "user") {
+    if (currentUser.role === "user" && location.state?.from) {
+      navigate(getIntendedPath(location, currentUser), { replace: true });
+    } else if (selectedService && currentUser.role === "user") {
+      navigate("/bookings", { replace: true });
+    }
+  };
+
+  const clearSelectedService = () => {
+    setSelectedService(null);
+    if (location.pathname === "/bookings" && location.search) {
       navigate("/bookings", { replace: true });
     }
   };
@@ -222,7 +235,7 @@ function AppContent() {
                 handleSearch={handleSearch}
                 handleBook={handleBook}
                 selectedService={selectedService}
-                onClearSelection={() => setSelectedService(null)}
+                onClearSelection={clearSelectedService}
                 onMessage={setNotice}
               />
             }
@@ -251,7 +264,7 @@ function AppContent() {
               <RequireAuth>
                 <Booking
                   selectedService={selectedService}
-                  onClearSelection={() => setSelectedService(null)}
+                  onClearSelection={clearSelectedService}
                   onMessage={setNotice}
                 />
               </RequireAuth>

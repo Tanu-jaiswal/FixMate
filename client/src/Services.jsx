@@ -67,7 +67,15 @@ function Services({ filters, onBook }) {
                   <Icon size={25} strokeWidth={1.8} />
                 </div>
                 <p className="service-category">{service.category}</p>
-                <h3>{service.name}</h3>
+                <h3>
+                  <button
+                    className="service-card-title"
+                    type="button"
+                    onClick={() => onBook(service)}
+                  >
+                    {service.name}
+                  </button>
+                </h3>
                 <p>{service.description}</p>
                 <p className="service-provider">
                   {service.provider?.user?.name || "Local professional"} · {service.city}

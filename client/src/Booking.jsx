@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { apiRequest } from "./api";
 import { useAuth } from "./useAuth";
 
@@ -10,11 +11,38 @@ const providerActions = {
 
 function Booking({ selectedService, onClearSelection, onMessage }) {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const serviceId = searchParams.get("serviceId");
+  const [loadedService, setLoadedService] = useState({ id: null, service: null, error: "" });
   const [bookings, setBookings] = useState([]);
   const [loadedForUser, setLoadedForUser] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const loading = Boolean(user) && loadedForUser !== user.id;
+  const serviceLoading = Boolean(serviceId && loadedService.id !== serviceId);
+  const serviceError = serviceId && loadedService.id === serviceId ? loadedService.error : "";
+  const bookingService = serviceId
+    ? loadedService.id === serviceId ? loadedService.service : null
+    : selectedService;
+
+  useEffect(() => {
+    let active = true;
+    if (!serviceId) return undefined;
+    apiRequest(`/services/${encodeURIComponent(serviceId)}`)
+      .then(({ service }) => {
+        if (!service?._id) {
+          throw new Error("The selected service could not be loaded.");
+        }
+        if (active) setLoadedService({ id: serviceId, service, error: "" });
+      })
+      .catch((requestError) => {
+        if (active) setLoadedService({ id: serviceId, service: null, error: requestError.message });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [serviceId]);
 
   useEffect(() => {
     let active = true;
@@ -47,6 +75,10 @@ function Booking({ selectedService, onClearSelection, onMessage }) {
 
   async function submitBooking(event) {
     event.preventDefault();
+    if (!bookingService?._id) {
+      setError("Choose an available service before submitting a booking.");
+      return;
+    }
     setError("");
     setSubmitting(true);
     const formData = new FormData(event.currentTarget);
@@ -54,7 +86,7 @@ function Booking({ selectedService, onClearSelection, onMessage }) {
       const { booking } = await apiRequest("/bookings", {
         method: "POST",
         body: {
-          serviceId: selectedService._id,
+          serviceId: bookingService._id,
           scheduledAt: new Date(formData.get("scheduledAt")).toISOString(),
           address: formData.get("address"),
           details: formData.get("details"),
@@ -107,23 +139,28 @@ function Booking({ selectedService, onClearSelection, onMessage }) {
         </div>
 
         {error && <p className="form-message is-error" role="alert">{error}</p>}
+        {serviceError && <p className="form-message is-error" role="alert">{serviceError}</p>}
 
         {!user && (
           <p className="empty-state">
-            {selectedService
-              ? `Sign in to request ${selectedService.name}. Your selected service will be kept for this visit.`
+            {bookingService || serviceId
+              ? `Sign in to request ${bookingService?.name || "this service"}. Your selected service will be kept for this visit.`
               : "Sign in as a customer to create and manage bookings."}
           </p>
         )}
 
-        {user?.role === "user" && selectedService && (
+        {user?.role === "user" && serviceLoading && (
+          <p className="loading-message" role="status">Loading selected service…</p>
+        )}
+
+        {user?.role === "user" && bookingService && !serviceLoading && (
           <form className="booking-form" onSubmit={submitBooking}>
             <div className="selected-service">
               <div>
-                <strong>{selectedService.name}</strong>
-                <span>{selectedService.category} · {selectedService.city}</span>
+                <strong>{bookingService.name}</strong>
+                <span>{bookingService.category} · {bookingService.city}</span>
               </div>
-              <strong>₹{Number(selectedService.price).toLocaleString("en-IN")} / visit</strong>
+              <strong>₹{Number(bookingService.price).toLocaleString("en-IN")} / visit</strong>
               <button className="text-button" type="button" onClick={onClearSelection}>Remove</button>
             </div>
             <label htmlFor="booking-date">Date and Time</label>
