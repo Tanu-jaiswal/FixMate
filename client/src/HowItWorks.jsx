@@ -12,7 +12,7 @@ function HowItWorks() {
       icon: "👨‍🔧",
       title: "Find a Professional",
       description:
-        "Browse trusted professionals, check ratings, reviews and pricing.",
+        "Compare local provider profiles, service details, locations, and prices.",
     },
     {
       number: "03",
@@ -26,7 +26,7 @@ function HowItWorks() {
       icon: "⭐",
       title: "Get It Done",
       description:
-        "Get your service completed and share your experience with a review.",
+        "Follow the booking status as your provider works through the request.",
     },
   ];
 

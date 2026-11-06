@@ -25,22 +25,22 @@ function About() {
           <div className="about-features">
             <div>
               <strong>✓</strong>
-              <span>Verified Professionals</span>
+              <span>Local provider profiles</span>
             </div>
 
             <div>
               <strong>✓</strong>
-              <span>Easy & Secure Booking</span>
+              <span>Account-based booking requests</span>
             </div>
 
             <div>
               <strong>✓</strong>
-              <span>Transparent Ratings & Reviews</span>
+              <span>Clear service descriptions and pricing</span>
             </div>
 
             <div>
               <strong>✓</strong>
-              <span>Reliable Local Services</span>
+              <span>Booking status updates</span>
             </div>
           </div>
         </div>
@@ -51,25 +51,14 @@ function About() {
           <h3>Why Choose FixMate?</h3>
 
           <p>
-            We bring customers and skilled service professionals together
-            on one simple platform.
+            Find local service listings, request appointments, and follow each
+            booking through its current status.
           </p>
 
           <div className="about-stats">
-            <div>
-              <h3>500+</h3>
-              <p>Professionals</p>
-            </div>
-
-            <div>
-              <h3>1K+</h3>
-              <p>Services</p>
-            </div>
-
-            <div>
-              <h3>4.8★</h3>
-              <p>Rating</p>
-            </div>
+            <p>Customer accounts</p>
+            <p>Provider workspaces</p>
+            <p>Booking history</p>
           </div>
         </div>
 

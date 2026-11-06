@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node server.js",
     "test": "node --test",
-    "seed:services": "node scripts/seedServices.js"
+    "seed:services": "node scripts/seedServices.js",
+    "admin:promote": "node scripts/promoteAdmin.js"
   },
   "keywords": [],
   "author": "",

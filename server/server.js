@@ -7,6 +7,7 @@ const authRoutes = require("./routes/auth");
 const providerRoutes = require("./routes/providers");
 const serviceRoutes = require("./routes/services");
 const bookingRoutes = require("./routes/bookings");
+const adminRoutes = require("./routes/admin");
 
 const app = express();
 const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
@@ -52,6 +53,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/providers", providerRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: "The requested resource was not found." });

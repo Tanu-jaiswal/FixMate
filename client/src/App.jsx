@@ -10,8 +10,11 @@ import {
 } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import "./App.css";
+import "./polish.css";
 import { apiRequest } from "./api";
 import { useAuth } from "./useAuth";
+import Account from "./Account";
+import AdminDashboard from "./AdminDashboard";
 import About from "./About";
 import Booking from "./Booking";
 import Contact from "./Contact";
@@ -24,12 +27,16 @@ import Services from "./Services";
 function getIntendedPath(location, user) {
   const intendedPath = location.state?.from?.pathname;
   if (typeof intendedPath === "string" && intendedPath.startsWith("/") && !intendedPath.startsWith("//")) {
+    if (user?.role === "admin" && !intendedPath.startsWith("/admin")) {
+      return "/admin";
+    }
     return `${intendedPath}${location.state.from.search || ""}${location.state.from.hash || ""}`;
   }
+  if (user?.role === "admin") return "/admin";
   return user?.role === "provider" ? "/providers" : "/";
 }
 
-function RequireAuth({ children }) {
+function RequireRole({ roles, children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
 
@@ -38,6 +45,9 @@ function RequireAuth({ children }) {
   }
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  if (!roles.includes(user.role)) {
+    return <Navigate to={getIntendedPath({}, user)} replace />;
   }
   return children;
 }
@@ -148,11 +158,10 @@ function AppContent() {
     setUser(currentUser);
     setAuthError("");
     setNotice(`Welcome${currentUser.name ? `, ${currentUser.name}` : ""}.`);
-    if (currentUser.role === "user" && location.state?.from) {
-      navigate(getIntendedPath(location, currentUser), { replace: true });
-    } else if (selectedService && currentUser.role === "user") {
-      navigate("/bookings", { replace: true });
-    }
+    const destination = selectedService && currentUser.role === "user"
+      ? "/bookings"
+      : getIntendedPath(location, currentUser);
+    navigate(destination, { replace: true });
   };
 
   const clearSelectedService = () => {
@@ -201,6 +210,12 @@ function AppContent() {
               <li><Link to="/bookings" onClick={closeMenu}>Bookings</Link></li>
               {user.role === "provider" && (
                 <li><Link to="/providers" onClick={closeMenu}>Provider workspace</Link></li>
+              )}
+              {user.role === "admin" && (
+                <li><Link to="/admin" onClick={closeMenu}>Admin dashboard</Link></li>
+              )}
+              {user.role !== "admin" && (
+                <li><Link to="/account" onClick={closeMenu}>My profile</Link></li>
               )}
               <li><button className="nav-action" type="button" onClick={handleLogout}>Sign out</button></li>
             </>
@@ -261,13 +276,29 @@ function AppContent() {
           <Route
             path="/bookings"
             element={
-              <RequireAuth>
+              <RequireRole roles={["user", "provider"]}>
                 <Booking
                   selectedService={selectedService}
                   onClearSelection={clearSelectedService}
                   onMessage={setNotice}
                 />
-              </RequireAuth>
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/account"
+            element={
+              <RequireRole roles={["user", "provider"]}>
+                <Account />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <RequireRole roles={["admin"]}>
+                <AdminDashboard />
+              </RequireRole>
             }
           />
           <Route path="/contact" element={<Contact />} />

@@ -12,6 +12,11 @@ function escapeRegex(value) {
 }
 
 router.get("/", async (req, res) => {
+  for (const field of ["category", "location"]) {
+    if (typeof req.query[field] === "string" && req.query[field].length > 100) {
+      throw httpError(400, `${field} must be 100 characters or fewer.`);
+    }
+  }
   const filter = { isActive: true };
   if (typeof req.query.category === "string" && req.query.category.trim()) {
     filter.category = new RegExp(escapeRegex(req.query.category.trim()), "i");
@@ -53,7 +58,9 @@ router.post("/", requireAuth, allowRoles("provider"), async (req, res) => {
     typeof city !== "string" || !city.trim()) {
     throw httpError(400, "Name, category, description, and city are required.");
   }
-  const numericPrice = Number(price);
+  const numericPrice = typeof price === "number" || (typeof price === "string" && price.trim())
+    ? Number(price)
+    : Number.NaN;
   if (!Number.isFinite(numericPrice) || numericPrice < 0) {
     throw httpError(400, "Price must be a valid non-negative number.");
   }
@@ -86,11 +93,26 @@ router.patch("/:id", requireAuth, allowRoles("provider"), async (req, res) => {
       updates[field] = req.body[field];
     }
   }
+  if (updates.isActive !== undefined && typeof updates.isActive !== "boolean") {
+    throw httpError(400, "Service availability must be true or false.");
+  }
+  for (const field of ["name", "category", "description", "city"]) {
+    if (updates[field] !== undefined &&
+      (typeof updates[field] !== "string" || !updates[field].trim())) {
+      throw httpError(400, `${field} must be a non-empty string.`);
+    }
+    if (typeof updates[field] === "string") {
+      updates[field] = updates[field].trim();
+    }
+  }
   if (Object.keys(updates).length === 0) {
     throw httpError(400, "Provide at least one service field to update.");
   }
   if (updates.price !== undefined) {
-    updates.price = Number(updates.price);
+    updates.price = typeof updates.price === "number" ||
+      (typeof updates.price === "string" && updates.price.trim())
+      ? Number(updates.price)
+      : Number.NaN;
     if (!Number.isFinite(updates.price) || updates.price < 0) {
       throw httpError(400, "Price must be a valid non-negative number.");
     }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { BriefcaseBusiness, CheckCircle2, MapPin, UserRound } from "lucide-react";
+import { Link } from "react-router-dom";
 import { apiRequest } from "./api";
 import { useAuth } from "./useAuth";
 
@@ -139,6 +140,9 @@ function ProviderWorkspace() {
           {profile.isActive ? "Visible in search" : "Hidden from search"}
         </span>
       </div>
+      <p className="provider-bookings-link">
+        <Link to="/bookings">Review customer booking requests and update their status</Link>
+      </p>
       {error && <p className="form-message is-error" role="alert">{error}</p>}
       {message && <p className="form-message" role="status">{message}</p>}
       <div className="workspace-grid">
